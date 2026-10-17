@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4A8C3F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stok Takip">
+<title>Stok Takip</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F7F9F4;--surface:#FFFFFF;--surface2:#EEF4E8;--border:#DDE8D0;
+    --accent:#4A8C3F;--accent2:#7BBD6F;--accent-light:#E8F5E3;
+    --danger:#D94F3D;--danger-light:#FDECEA;
+    --text:#1E2D1A;--text2:#5A7052;--text3:#8FA887;
+    --shadow:0 2px 12px rgba(74,140,63,0.10);
+    --radius:16px;--radius-sm:10px;--font:'Nunito',sans-serif;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media(prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#141A10;--surface:#1E2A19;--surface2:#253320;--border:#334428;
+      --accent:#6DC05F;--accent2:#4A8C3F;--accent-light:#1E3318;
+      --danger:#E57367;--danger-light:#2D1815;--text:#E8F2E4;
+      --text2:#9DC494;--text3:#607A58;--shadow:0 2px 12px rgba(0,0,0,0.3);
+    }
+  }
+  *,*::before,*::after{box-sizing:inherit;}
+  html,body{height:100%;margin:0;padding:0;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100%;-webkit-font-smoothing:antialiased;}
+  #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+
+  .header{background:var(--accent);color:#fff;padding:16px 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:env(safe-area-inset-top,0);z-index:100;}
+  .header-title{font-size:20px;font-weight:800;letter-spacing:-0.3px;}
+  .header-sub{font-size:11px;opacity:.75;margin-top:1px;}
+  .room-badge{background:rgba(255,255,255,.18);border-radius:12px;padding:5px 10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;border:none;color:#fff;font-family:var(--font);}
+  .header-user{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border-radius:24px;padding:5px 10px 5px 6px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;border:none;font-family:var(--font);}
+  .avatar{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+
+  .tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{flex:1;padding:12px 8px;border:none;background:none;font-family:var(--font);font-size:12px;font-weight:700;color:var(--text3);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:color .15s,border-color .15s;min-width:72px;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+  .content{flex:1;padding:16px;overflow-y:auto;}
+
+  .search-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;}
+  .search-bar input{flex:1;border:none;outline:none;background:none;font-family:var(--font);font-size:14px;color:var(--text);}
+  .search-bar input::placeholder{color:var(--text3);}
+
+  .categories{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none;}
+  .categories::-webkit-scrollbar{display:none;}
+  .cat-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;flex-shrink:0;font-family:var(--font);}
+  .cat-pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  .product-list{display:flex;flex-direction:column;gap:10px;}
+  .product-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;border:1px solid var(--border);transition:border-color .15s,background .15s;}
+  .product-emoji{font-size:32px;line-height:1;flex-shrink:0;}
+  .product-info{flex:1;min-width:0;}
+  .product-name{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .product-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+  .product-category{display:inline-block;padding:2px 8px;border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:700;margin-top:4px;}
+  .qty-control{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .qty-btn{width:32px;height:32px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;cursor:pointer;transition:transform .1s;flex-shrink:0;}
+  .qty-btn:active{transform:scale(.88);}
+  .qty-btn.minus{background:var(--danger-light);color:var(--danger);}
+  .qty-btn.plus{background:var(--accent-light);color:var(--accent);}
+  .qty-num{font-size:17px;font-weight:800;min-width:24px;text-align:center;color:var(--text);}
+  .qty-num.low{color:var(--danger);}
+  .product-delete{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;border-radius:8px;flex-shrink:0;}
+  .product-delete:active{color:var(--danger);background:var(--danger-light);}
+
+  .empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
+  .empty-state .empty-icon{font-size:56px;margin-bottom:12px;}
+  .empty-state p{font-size:15px;font-weight:600;margin:0 0 8px;color:var(--text2);}
+  .empty-state span{font-size:13px;}
+
+  .fab{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:20px;width:56px;height:56px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(74,140,63,.4);display:flex;align-items:center;justify-content:center;z-index:200;transition:transform .15s;}
+  .fab:active{transform:scale(.92);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border-radius:24px 24px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;transform:translateY(100%);transition:transform .25s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--text);}
+
+  .form-group{margin-bottom:14px;}
+  .form-label{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.5px;}
+  .form-input,.form-select{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-family:var(--font);font-size:15px;color:var(--text);outline:none;transition:border-color .15s;}
+  .form-input:focus,.form-select:focus{border-color:var(--accent);}
+  .emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  .emoji-btn{aspect-ratio:1;border:2px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:border-color .1s,background .1s;}
+  .emoji-btn.selected{border-color:var(--accent);background:var(--accent-light);}
+  .btn-row{display:flex;gap:10px;margin-top:18px;}
+  .btn{flex:1;padding:14px;border-radius:var(--radius-sm);border:none;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+  .btn:active{opacity:.8;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-ghost{background:var(--surface2);color:var(--text2);}
+  .btn-danger{background:var(--danger);color:#fff;}
+
+  .user-card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+  .user-avatar{width:48px;height:48px;border-radius:50%;flex-shrink:0;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;}
+  .user-info{flex:1;min-width:0;}
+  .user-name{font-size:16px;font-weight:700;color:var(--text);}
+  .user-added{font-size:12px;color:var(--text3);margin-top:2px;}
+  .user-badge{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);}
+  .active-user-indicator{background:var(--accent);color:#fff;}
+  .section-header{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 10px;}
+  .section-header:first-child{margin-top:0;}
+
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stat-card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);text-align:center;}
+  .stat-num{font-size:28px;font-weight:800;color:var(--accent);line-height:1;}
+  .stat-label{font-size:12px;color:var(--text3);margin-top:4px;font-weight:600;}
+
+  .loading{text-align:center;padding:40px;color:var(--text3);font-size:14px;}
+  .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:500;opacity:0;transition:opacity .2s;white-space:nowrap;pointer-events:none;}
+  .toast.show{opacity:1;}
+
+  /* ONBOARD */
+  .onboard{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
+  .onboard-icon{font-size:72px;margin-bottom:16px;}
+  .onboard-title{font-size:28px;font-weight:800;color:var(--text);margin:0 0 8px;}
+  .onboard-sub{font-size:15px;color:var(--text2);margin:0 0 28px;line-height:1.6;}
+  .onboard-card{background:var(--surface);border-radius:var(--radius);padding:24px;width:100%;max-width:360px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:14px;text-align:left;}
+  .onboard-card-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:14px;}
+  .onboard-divider{display:flex;align-items:center;gap:12px;margin:4px 0 14px;}
+  .onboard-divider::before,.onboard-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  .onboard-divider span{font-size:12px;color:var(--text3);font-weight:700;}
+
+  /* SETUP SCREEN */
+  .setup-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
+  .setup-card{background:var(--surface);border-radius:var(--radius);padding:28px 24px;width:100%;max-width:400px;box-shadow:var(--shadow);border:1px solid var(--border);text-align:left;}
+  .setup-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .setup-sub{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6;}
+  .code-block{background:#1e1e1e;color:#d4edda;border-radius:var(--radius-sm);padding:14px 16px;font-family:monospace;font-size:12px;line-height:1.8;overflow-x:auto;margin:10px 0;white-space:pre;}
+  .step-num{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:800;align-items:center;justify-content:center;margin-right:8px;flex-shrink:0;}
+  .step-row{display:flex;align-items:flex-start;gap:0;margin-bottom:16px;font-size:14px;color:var(--text2);line-height:1.6;}
+
+  .room-info-code{font-size:32px;font-weight:800;letter-spacing:8px;color:var(--accent);text-align:center;background:var(--accent-light);border-radius:var(--radius-sm);padding:16px;margin:12px 0;font-family:monospace;cursor:pointer;}
+  .share-steps{background:var(--surface2);border-radius:var(--radius-sm);padding:14px 16px;}
+  .share-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;font-size:13px;color:var(--text2);line-height:1.5;}
+  .share-step:last-child{margin-bottom:0;}
+  .share-step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+
+  /* PWA banner */
+  .pwa-banner{background:var(--accent-light);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start;width:100%;max-width:360px;}
+  .pwa-banner-text{font-size:13px;color:var(--text2);line-height:1.5;flex:1;}
+  .pwa-banner-text b{color:var(--text);}
+  .pwa-banner-close{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="spinner"></div>Yükleniyor...</div></div>
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+// ============================================================
+// ⚠️  BURAYA KENDİ FIREBASE AYARLARINIZI YAZIN
+// Firebase Console > Project Settings > Your apps > Config
+// ============================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAm9-PuZTU7Pg9fZqSzIc-fFsjp399gaOw",
+  authDomain:        "stok-takip-f8da0.firebaseapp.com",
+  databaseURL:       "https://stok-takip-f8da0-default-rtdb.firebaseio.com",
+  projectId:         "stok-takip-f8da0",
+  storageBucket:     "stok-takip-f8da0.firebasestorage.app",
+  messagingSenderId: "480201437781",
+  appId:             "1:480201437781:web:6cc769666d36159124dadc",
+  measurementId:     "G-CRV0YM9L61"
+};
+// ============================================================
+
+const CATEGORIES = ['Tümü','🥩 Et','🥦 Sebze','🍎 Meyve','🥛 Süt','🥫 Konserve','🌾 Tahıl','🧂 Baharat','🧃 İçecek','🍰 Tatlı','🧴 Temizlik','📦 Diğer'];
+const EMOJIS = [
+  // 🍎 Meyve
+  '🍎','🍊','🍋','🍓','🍒','🥝','🍅','🥭','🍑','🍌','🍉','🍈',
+  // 🥦 Sebze
+  '🥦','🥒','🫑','🥬','🧅','🧄','🥔','🫘','🥜','🍄',
+  // 🥩 Et & Protein
+  '🥩','🍗','🥓','🐟','🦐','🥚','🧀',
+  // 🥛 Süt & Tahıl
+  '🥛','🍞','🥐','🌾','🌰',
+  // 🥫 Konserve & Baharat
+  '🥫','🧂','🫒','🍯',
+  // 🫙 Yağ — şişe (🫙 kavanoz), sake şişesi (🍶), varil (🛢️)
+  '🫙','🍶','🛢️',
+  // 🧃 İçecek
+  '🧃','🧊','🍵','☕','🧋',
+  // 🍝 Yemek
+  '🍝','🌯','🥗','🍜',
+  // 🧽 Temizlik
+  '🧽','🧴','🧼','🫧','🧹','🪣','🪥',
+  // 🧻 Kağıt — tuvalet kağıdı rulo (🧻) ve havlu peçete (🗞️ gazete rulosu en yakın alternatif)
+  '🧻','🗞️',
+  // 📦 Diğer
+  '📦','🛍️','🧺',
+];
+
+// --- STATE ---
+let fbApp, fbDb;
+let roomCode = null, myName = '', myId = null;
+let products = {}, users = {};
+let currentTab = 'pantry', selectedCategory = 'Tümü', searchQuery = '';
+let modalMode = null, editingProductId = null, confirmDeleteId = null, activeUserId = null;
+let formState = { name:'', emoji:'🍎', category: CATEGORIES[1], quantity:1 };
+let appScreen = 'loading';
+let unsubProducts = null, unsubUsers = null;
+let showPwaBanner = true;
+
+// --- FIREBASE INIT ---
+function initFirebase() {
+  try {
+    if (firebaseConfig.apiKey === 'BURAYA_API_KEY') return false;
+    fbApp = initializeApp(firebaseConfig);
+    fbDb  = getDatabase(fbApp);
+    return true;
+  } catch(e) { return false; }
+}
+
+// --- HELPERS ---
+function rp(path) { return ref(fbDb, `rooms/${roomCode}/${path}`); }
+function getInitials(n) { return (n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?'; }
+function generateCode() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r=''; for(let i=0;i<6;i++) r+=c[Math.floor(Math.random()*c.length)]; return r; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escA(s){ return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+
+function saveSession() {
+  try { localStorage.setItem('stok_v2', JSON.stringify({roomCode,myName,myId,activeUserId,showPwaBanner})); } catch(e){}
+}
+
+// --- INIT ---
+async function init() {
+  const ok = initFirebase();
+  if (!ok) { showSetupScreen(); return; }
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('stok_v2')||'{}');
+    if (saved.roomCode && saved.myName) {
+      roomCode = saved.roomCode; myName = saved.myName; myId = saved.myId;
+      activeUserId = saved.activeUserId||null;
+      showPwaBanner = saved.showPwaBanner !== false;
+      await enterRoom(); return;
+    }
+  } catch(e){}
+  appScreen = 'onboard'; render();
+}
+
+async function enterRoom() {
+  if (!fbDb||!roomCode||!myName) return;
+  if (!myId) myId = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  appScreen = 'app';
+
+  // Register self
+  await set(ref(fbDb,`rooms/${roomCode}/users/${myId}`), {
+    name:myName, initials:getInitials(myName), addedAt: Date.now(), id:myId
+  }).catch(()=>{});
+
+  subscribeAll();
+  saveSession();
+  render();
+}
+
+function subscribeAll() {
+  if (unsubProducts) unsubProducts();
+  if (unsubUsers) unsubUsers();
+
+  unsubProducts = onValue(rp('products'), snap => {
+    products = {};
+    if (snap.exists()) { const d=snap.val(); Object.keys(d).forEach(k=>{ products[k]={...d[k],id:k}; }); }
+    if (appScreen==='app') render();
+  });
+
+  unsubUsers = onValue(rp('users'), snap => {
+    users = {};
+    if (snap.exists()) { const d=snap.val(); Object.keys(d).forEach(k=>{ users[k]={...d[k],id:k}; }); }
+    if (appScreen==='app') render();
+  });
+}
+
+// --- SCREENS ---
+function render() {
+  const app = document.getElementById('app');
+  if (appScreen==='setup')  { app.innerHTML = renderSetup(); return; }
+  if (appScreen==='onboard'){ app.innerHTML = renderOnboard(); return; }
+  if (appScreen==='app')    { app.innerHTML = renderMainApp(); return; }
+  app.innerHTML = `<div class="loading"><div class="spinner"></div>Yükleniyor...</div>`;
+}
+
+function showSetupScreen() { appScreen='setup'; render(); }
+
+function renderSetup() {
+  return `<div class="setup-screen">
+    <div class="setup-card">
+      <div class="setup-title">🔧 Firebase Kurulumu</div>
+      <div class="setup-sub">Uygulamayı kullanmak için ücretsiz bir Firebase hesabı oluşturup ayarları girmeniz gerekiyor. Sadece bir kez yapılır.</div>
+
+      <div class="step-row"><span class="step-num">1</span><div><b>console.firebase.google.com</b> adresine gidin ve Google hesabınızla giriş yapın.</div></div>
+      <div class="step-row"><span class="step-num">2</span><div><b>"Add project"</b> → proje adı girin (örn. stok-takip) → Continue → Continue → Create project.</div></div>
+      <div class="step-row"><span class="step-num">3</span><div>Sol menüden <b>Build → Realtime Database</b> → Create Database → <b>Start in test mode</b> → Enable.</div></div>
+      <div class="step-row"><span class="step-num">4</span><div>Sol üstteki ⚙️ <b>Project Settings</b> → aşağıda "Your apps" → &lt;/&gt; Web ikonu → uygulama adı girin → Register app → <b>Config</b> seçin → kopyalayın.</div></div>
+      <div class="step-row"><span class="step-num">5</span><div>Bu HTML dosyasını bir metin editörüyle açın (Notepad, VS Code). Üstteki <code>firebaseConfig</code> bölümündeki <b>BURAYA_...</b> kısımlarını kopyaladığınız değerlerle değiştirin.</div></div>
+      <div class="step-row"><span class="step-num">6</span><div>Dosyayı kaydedin → tarayıcıda açın. Hazır!</div></div>
+
+      <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:14px;font-size:13px;color:var(--text2);margin-top:8px;">
+        💡 <b>Netlify'a yüklemek için:</b> netlify.com → "Add new site" → "Deploy manually" → HTML dosyasını sürükle bırak. Ücretsiz link alırsınız.
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderOnboard() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  return `<div class="onboard">
+    <div class="onboard-icon">🛒</div>
+    <div class="onboard-title">Stok Takip</div>
+    <div class="onboard-sub">Evinizin stoğunu takip edin,<br>ailenizle anlık paylaşın.</div>
+
+    ${(isIOS||isAndroid) && showPwaBanner ? `<div class="pwa-banner">
+      <div style="font-size:22px">📲</div>
+      <div class="pwa-banner-text">${isIOS?`<b>Ana Ekrana Ekle:</b> Alttaki 📤 butonuna → "Ana Ekrana Ekle".`:`<b>Kurmak için:</b> Tarayıcı menüsü → "Ana ekrana ekle".`}</div>
+      <button class="pwa-banner-close" onclick="dismissBanner()">✕</button>
+    </div>` : ''}
+
+    <div class="onboard-card">
+      <div class="onboard-card-title">🏠 Yeni Liste Oluştur</div>
+      <div class="form-group">
+        <label class="form-label">Adınız</label>
+        <input class="form-input" id="new-name" type="text" placeholder="örn. Ahmet" maxlength="30">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="createRoom()">Liste Oluştur</button>
+    </div>
+
+    <div class="onboard-divider"><span>VEYA</span></div>
+
+    <div class="onboard-card">
+      <div class="onboard-card-title">🔗 Mevcut Listeye Katıl</div>
+      <div class="form-group">
+        <label class="form-label">Adınız</label>
+        <input class="form-input" id="join-name" type="text" placeholder="örn. Ayşe" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Liste Kodu</label>
+        <input class="form-input" id="join-code" type="text" placeholder="örn. ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-weight:800;font-size:18px;">
+      </div>
+      <button class="btn btn-ghost" style="width:100%;background:var(--accent-light);color:var(--accent);" onclick="joinRoom()">Listeye Katıl</button>
+    </div>
+  </div>`;
+}
+
+function renderMainApp() {
+  const actor = activeUserId ? (users[activeUserId]||null) : null;
+  const dName = actor ? actor.name : myName;
+  const dInit = actor ? actor.initials : getInitials(myName);
+  return `
+    <div class="header">
+      <div>
+        <div class="header-title">🛒 Stok Takip</div>
+        <div class="header-sub">Liste: ${roomCode}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="room-badge" onclick="openModal('room-info')">📤 ${roomCode}</button>
+        <button class="header-user" onclick="openModal('switch-user')">
+          <div class="avatar">${esc(dInit)}</div>${esc(dName)}
+        </button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn ${currentTab==='pantry'?'active':''}" onclick="switchTab('pantry')">📦 Ürünler</button>
+      <button class="tab-btn ${currentTab==='low'?'active':''}" onclick="switchTab('low')">⚠️ Azalan</button>
+      <button class="tab-btn ${currentTab==='users'?'active':''}" onclick="switchTab('users')">👥 Kişiler</button>
+      <button class="tab-btn ${currentTab==='stats'?'active':''}" onclick="switchTab('stats')">📊 Özet</button>
+    </div>
+    <div class="content">${renderTab()}</div>
+    ${currentTab!=='stats' ? `<button class="fab" onclick="${currentTab==='users'?`openModal('add-user')`:`openModal('add-product')`}">＋</button>` : ''}
+    ${buildModal()}`;
+}
+
+function renderTab() {
+  if (currentTab==='pantry') return renderPantry(false);
+  if (currentTab==='low')    return renderPantry(true);
+  if (currentTab==='users')  return renderUsers();
+  if (currentTab==='stats')  return renderStats();
+  return '';
+}
+
+function renderPantry(lowOnly) {
+  let list = Object.values(products);
+  if (lowOnly) list = list.filter(p=>p.quantity<=1);
+  if (selectedCategory!=='Tümü') list = list.filter(p=>p.category===selectedCategory);
+  if (searchQuery) list = list.filter(p=>p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  list.sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  return `
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Ürün ara..." value="${escA(searchQuery)}" oninput="onSearch(this.value)">
+    </div>
+    ${!lowOnly?`<div class="categories">${CATEGORIES.map(c=>`<button class="cat-pill ${selectedCategory===c?'active':''}" onclick="selCat('${escA(c)}')">${c}</button>`).join('')}</div>`:''}
+    <div class="product-list">
+      ${list.length===0?`<div class="empty-state"><div class="empty-icon">${lowOnly?'✅':'🛒'}</div><p>${lowOnly?'Azalan ürün yok.':'Henüz ürün eklenmedi.'}</p><span>${lowOnly?'Tüm ürünler yeterli.':'+ butonuna basarak ekleyin.'}</span></div>`:list.map(renderCard).join('')}
+    </div>`;
+}
+
+function renderCard(p) {
+  const low = p.quantity<=1, conf = confirmDeleteId===p.id;
+  return `<div class="product-card" style="${conf?'border-color:var(--danger);background:var(--danger-light);':''}">
+    <div class="product-emoji">${p.emoji||'📦'}</div>
+    <div class="product-info">
+      <div class="product-name">${esc(p.name)}</div>
+      ${conf?`<div style="font-size:12px;font-weight:700;color:var(--danger);margin-top:4px;">Silinsin mi?</div>`
+            :`<div class="product-meta">Son: ${esc(p.updatedBy||'?')}</div><span class="product-category">${esc(p.category||'Diğer')}</span>`}
+    </div>
+    ${conf?`<div style="display:flex;gap:8px;flex-shrink:0;">
+        <button class="btn btn-ghost" style="padding:8px 12px;font-size:13px;" onclick="cancelDel()">İptal</button>
+        <button class="btn btn-danger" style="padding:8px 12px;font-size:13px;" onclick="delProduct('${p.id}')">Sil</button>
+      </div>`
+    :`<div class="qty-control">
+        <button class="qty-btn minus" onclick="changeQty('${p.id}',-1)">−</button>
+        <span class="qty-num ${low?'low':''}">${p.quantity}</span>
+        <button class="qty-btn plus" onclick="changeQty('${p.id}',1)">＋</button>
+      </div>
+      <button class="product-delete" onclick="askDel('${p.id}')">🗑</button>`}
+  </div>`;
+}
+
+function renderUsers() {
+  const list = Object.values(users);
+  return `
+    <div class="section-header">Listedeki Kişiler (${list.length})</div>
+    ${list.length===0?`<div class="empty-state"><div class="empty-icon">👤</div><p>Henüz kimse yok.</p></div>`
+    :list.map(u=>`<div class="user-card">
+      <div class="user-avatar">${u.initials||'?'}</div>
+      <div class="user-info"><div class="user-name">${esc(u.name)}</div><div class="user-added">${u.addedAt?new Date(u.addedAt).toLocaleDateString('tr-TR')+' tarihinden beri':''}</div></div>
+      ${activeUserId===u.id?`<span class="user-badge active-user-indicator">Aktif</span>`:`<button class="btn btn-ghost" style="flex:0;padding:8px 14px;font-size:13px;" onclick="switchUser('${u.id}')">Seç</button>`}
+    </div>`).join('')}
+    <div class="section-header" style="margin-top:24px;">Aktif Kişi</div>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 10px;">Seçili kişi adına ürün güncellemesi yapılır.</p>
+    ${activeUserId&&users[activeUserId]
+      ?`<div class="user-card">
+          <div class="user-avatar" style="background:var(--accent2);">${users[activeUserId].initials}</div>
+          <div class="user-info"><div class="user-name">${esc(users[activeUserId].name)}</div><div class="user-added">Şu an aktif</div></div>
+          <button class="btn btn-ghost" style="flex:0;padding:8px 14px;font-size:13px;" onclick="clearUser()">Çıkar</button>
+        </div>`
+      :`<div style="background:var(--surface2);border-radius:12px;padding:14px;font-size:14px;color:var(--text2);">Kişi seçilmedi — yukarıdan seçin.</div>`}
+    <div class="section-header" style="margin-top:28px;">Birini Davet Et</div>
+    <div class="share-steps">
+      <div class="share-step"><div class="share-step-num">1</div><div>Sağ üstteki <b>${roomCode}</b> koduna tıklayın → kopyalayın.</div></div>
+      <div class="share-step"><div class="share-step-num">2</div><div>Kodu WhatsApp veya SMS ile gönderin.</div></div>
+      <div class="share-step"><div class="share-step-num">3</div><div>Karşı taraf uygulamayı açar → "Listeye Katıl" → kodu girer.</div></div>
+    </div>`;
+}
+
+function renderStats() {
+  const list = Object.values(products);
+  const byCat = {};
+  list.forEach(p=>{byCat[p.category]=(byCat[p.category]||0)+1;});
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  return `
+    <div class="summary-grid">
+      <div class="stat-card"><div class="stat-num">${list.length}</div><div class="stat-label">Toplam Ürün</div></div>
+      <div class="stat-card"><div class="stat-num">${list.reduce((s,p)=>s+p.quantity,0)}</div><div class="stat-label">Toplam Adet</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--danger)">${list.filter(p=>p.quantity<=1).length}</div><div class="stat-label">Azalan</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--danger)">${list.filter(p=>p.quantity===0).length}</div><div class="stat-label">Tükenen</div></div>
+    </div>
+    <div class="section-header">Kategorilere Göre</div>
+    ${cats.length===0?`<div style="color:var(--text3);font-size:14px;padding:12px 0;">Henüz ürün eklenmedi.</div>`
+    :cats.map(([cat,cnt])=>`<div class="product-card" style="padding:12px 16px;"><div style="flex:1;font-size:15px;font-weight:700;">${esc(cat)}</div><div style="font-size:15px;font-weight:800;color:var(--accent);">${cnt} ürün</div></div>`).join('')}`;
+}
+
+function buildModal() {
+  if (!modalMode) return `<div class="modal-overlay" id="modal-overlay"><div class="modal"></div></div>`;
+  let c = '';
+
+  if (modalMode==='add-product'||modalMode==='edit-product') {
+    c = `<div class="modal-handle"></div>
+      <div class="modal-title">${modalMode==='edit-product'?'✏️ Düzenle':'➕ Yeni Ürün'}</div>
+      <div class="form-group"><label class="form-label">Ürün Adı</label>
+        <input class="form-input" id="prod-name" type="text" placeholder="örn. Domates" value="${escA(formState.name)}"></div>
+      <div class="form-group"><label class="form-label">Kategori</label>
+        <select class="form-select" id="prod-cat" onchange="capForm()">
+          ${CATEGORIES.slice(1).map(c=>`<option value="${c}" ${formState.category===c?'selected':''}>${c}</option>`).join('')}
+        </select></div>
+      <div class="form-group"><label class="form-label">Miktar</label>
+        <input class="form-input" id="prod-qty" type="number" min="0" max="999" value="${formState.quantity}" oninput="capForm()"></div>
+      <div class="form-group"><label class="form-label">Emoji</label>
+        <div class="emoji-grid">${EMOJIS.map(e=>`<button class="emoji-btn ${formState.emoji===e?'selected':''}" onclick="selEmoji('${e}')">${e}</button>`).join('')}</div></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+        ${modalMode==='edit-product'&&editingProductId?`<button class="btn btn-danger" onclick="delProduct('${editingProductId}')">Sil</button>`:''}
+        <button class="btn btn-primary" onclick="saveProduct()">Kaydet</button>
+      </div>`;
+  }
+
+  if (modalMode==='add-user') {
+    c = `<div class="modal-handle"></div>
+      <div class="modal-title">👤 Kişi Ekle</div>
+      <p style="font-size:13px;color:var(--text2);margin:0 0 14px;">Veya liste kodunu paylaşarak karşı tarafın kendini eklemesini sağlayın.</p>
+      <div class="form-group"><label class="form-label">Ad Soyad</label>
+        <input class="form-input" id="user-name" type="text" placeholder="örn. Ayşe Yılmaz"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveUser()">Ekle</button>
+      </div>`;
+  }
+
+  if (modalMode==='switch-user') {
+    const list = Object.values(users);
+    c = `<div class="modal-handle"></div>
+      <div class="modal-title">👥 Kişi Seç</div>
+      <p style="font-size:13px;color:var(--text2);margin:0 0 14px;">Adına işlem yapılacak kişiyi seçin.</p>
+      ${list.map(u=>`<div class="user-card" style="margin-bottom:10px;">
+        <div class="user-avatar" style="width:40px;height:40px;font-size:16px;">${u.initials}</div>
+        <div class="user-info"><div class="user-name">${esc(u.name)}</div></div>
+        <button class="btn ${activeUserId===u.id?'btn-primary':'btn-ghost'}" style="flex:0;padding:8px 16px;font-size:13px;" onclick="switchUser('${u.id}')">${activeUserId===u.id?'✓ Seçili':'Seç'}</button>
+      </div>`).join('')}
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-ghost" onclick="closeModal()">Kapat</button>
+        ${activeUserId?`<button class="btn btn-ghost" onclick="clearUser();closeModal()">Seçimi Kaldır</button>`:''}
+      </div>`;
+  }
+
+  if (modalMode==='room-info') {
+    c = `<div class="modal-handle"></div>
+      <div class="modal-title">📤 Listeyi Paylaş</div>
+      <p style="font-size:13px;color:var(--text2);margin:0 0 8px;">Liste kodunuz:</p>
+      <div class="room-info-code" onclick="copyCode()">${roomCode}</div>
+      <p style="font-size:12px;color:var(--text3);text-align:center;margin:0 0 16px;">👆 Koda tıklayarak kopyalayın</p>
+      <div class="share-steps">
+        <div class="share-step"><div class="share-step-num">1</div><div><b>${roomCode}</b> kodunu kopyalayın.</div></div>
+        <div class="share-step"><div class="share-step-num">2</div><div>Uygulamanın linkini ve kodu ailenize gönderin.</div></div>
+        <div class="share-step"><div class="share-step-num">3</div><div>Onlar uygulamayı açar → adını girer → "Listeye Katıl" → kodu girer.</div></div>
+        <div class="share-step"><div class="share-step-num">4</div><div>Herkese anlık yansır. İnternet olan her yerden çalışır.</div></div>
+      </div>
+      <div class="btn-row" style="margin-top:18px;">
+        <button class="btn btn-ghost" onclick="closeModal()">Kapat</button>
+        <button class="btn btn-primary" onclick="copyCode()">📋 Kopyala</button>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" style="width:100%;color:var(--danger);" onclick="leaveRoom()">🚪 Bu Listeden Ayrıl</button>
+      </div>`;
+  }
+
+  return `<div class="modal-overlay open" id="modal-overlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">${c}</div>
+  </div>`;
+}
+
+function refreshModal() {
+  const el = document.getElementById('modal-overlay');
+  const tmp = document.createElement('div'); tmp.innerHTML = buildModal();
+  if (el) el.replaceWith(tmp.firstElementChild);
+}
+
+// --- ACTIONS ---
+window.switchTab = t => { currentTab=t; modalMode=null; confirmDeleteId=null; render(); };
+window.onSearch  = v => { searchQuery=v; render(); };
+window.selCat    = c => { selectedCategory=c; render(); };
+window.closeModal= () => { modalMode=null; render(); };
+window.dismissBanner = () => { showPwaBanner=false; saveSession(); render(); };
+
+window.openModal = (mode) => {
+  modalMode = mode;
+  if (mode==='add-product') { editingProductId=null; formState={name:'',emoji:'🍎',category:CATEGORIES[1],quantity:1}; }
+  refreshModal();
+  setTimeout(()=>{ document.getElementById('prod-name')?.focus(); document.getElementById('user-name')?.focus(); },100);
+};
+
+window.capForm = () => {
+  const n=document.getElementById('prod-name'), q=document.getElementById('prod-qty'), c=document.getElementById('prod-cat');
+  if(n) formState.name=n.value; if(q) formState.quantity=parseInt(q.value)||0; if(c) formState.category=c.value;
+};
+
+window.selEmoji = e => { capForm(); formState.emoji=e; refreshModal(); };
+
+window.createRoom = async () => {
+  const name = document.getElementById('new-name')?.value?.trim();
+  if (!name) { showToast('Adınızı girin'); return; }
+  myName=name; roomCode=generateCode(); await enterRoom();
+};
+
+window.joinRoom = async () => {
+  const name = document.getElementById('join-name')?.value?.trim();
+  const code = (document.getElementById('join-code')?.value||'').trim().toUpperCase();
+  if (!name) { showToast('Adınızı girin'); return; }
+  if (code.length<4) { showToast('Geçerli bir kod girin'); return; }
+  myName=name; roomCode=code; await enterRoom();
+};
+
+window.saveProduct = async () => {
+  capForm();
+  const name = formState.name.trim();
+  if (!name) { showToast('Ürün adı girin'); return; }
+  const actor = activeUserId&&users[activeUserId] ? users[activeUserId].name : myName;
+  const data = { name, category:formState.category, quantity:formState.quantity, emoji:formState.emoji, updatedBy:actor, updatedAt:Date.now() };
+  try {
+    if (modalMode==='edit-product'&&editingProductId) {
+      const updated = {...products[editingProductId],...data};
+      await set(rp(`products/${editingProductId}`), updated);
+      products[editingProductId]=updated;
+    } else {
+      const id='p'+Date.now();
+      await set(rp(`products/${id}`), {...data,addedAt:Date.now(),id});
+      products[id]={...data,addedAt:Date.now(),id};
+    }
+    showToast(modalMode==='edit-product'?'Güncellendi ✓':'Eklendi ✓');
+    closeModal();
+  } catch(e){ showToast('Hata: '+e.message); }
+};
+
+window.saveUser = async () => {
+  const name = document.getElementById('user-name')?.value?.trim();
+  if (!name) { showToast('Ad girin'); return; }
+  const id='u'+Date.now();
+  const u={name,initials:getInitials(name),addedAt:Date.now(),id};
+  try { await set(rp(`users/${id}`),u); users[id]=u; showToast('Eklendi ✓'); closeModal(); }
+  catch(e){ showToast('Hata: '+e.message); }
+};
+
+window.changeQty = async (id, delta) => {
+  const p=products[id]; if(!p) return;
+  const newQty=Math.max(0,(p.quantity||0)+delta);
+  const actor=activeUserId&&users[activeUserId]?users[activeUserId].name:myName;
+  const updated={...p,quantity:newQty,updatedBy:actor,updatedAt:Date.now()};
+  products[id]=updated; render();
+  try { await set(rp(`products/${id}`),updated); }
+  catch(e){ products[id]=p; render(); showToast('Hata'); }
+};
+
+window.askDel    = id => { confirmDeleteId=id; render(); };
+window.cancelDel = () => { confirmDeleteId=null; render(); };
+window.delProduct= async id => {
+  confirmDeleteId=null;
+  const backup=products[id]; delete products[id]; render();
+  try { await remove(rp(`products/${id}`)); showToast('Silindi'); }
+  catch(e){ if(backup) products[id]=backup; render(); showToast('Hata: '+e.message); }
+};
+
+window.switchUser = id => { activeUserId=id; saveSession(); render(); showToast((users[id]?.name||'Kişi')+' seçildi'); };
+window.clearUser  = () => { activeUserId=null; saveSession(); render(); };
+
+window.copyCode = () => {
+  try { navigator.clipboard.writeText(roomCode); showToast('Kod kopyalandı: '+roomCode); }
+  catch(e){ showToast('Kod: '+roomCode); }
+};
+
+window.leaveRoom = () => {
+  try { localStorage.removeItem('stok_v2'); } catch(e){}
+  if(unsubProducts) try{unsubProducts();}catch(e){}
+  if(unsubUsers) try{unsubUsers();}catch(e){}
+  roomCode=null; myName=''; myId=null; activeUserId=null; products={}; users={};
+  appScreen='onboard'; modalMode=null; render();
+};
+
+// BOOT
+init();
+</script>
+</body>
+</html>
